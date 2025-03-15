@@ -1,0 +1,70 @@
+const axios = require('axios');
+
+class AdsPowerAPI {
+  constructor(baseUrl = 'http://localhost:50325/api/v1') {
+    this.baseUrl = baseUrl;
+  }
+
+  async startBrowser(userId) {
+    try {
+      const response = await axios.get(`${this.baseUrl}/browser/start?user_id=${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('启动浏览器失败:', error.message);
+      throw error;
+    }
+  }
+
+  async stopBrowser(userId) {
+    try {
+      const response = await axios.get(`${this.baseUrl}/stop_browser?user_id=${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('停止浏览器失败:', error.message);
+      throw error;
+    }
+  }
+
+  async checkBrowserStatus(userId) {
+    try {
+      const response = await axios.get(`${this.baseUrl}/browser/active?user_id=${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('检查浏览器状态失败:', error.message);
+      throw error;
+    }
+  }
+  
+  // 获取环境列表
+  async getEnvironmentList(options = {}) {
+    try {
+      // 构建查询参数
+      const params = {};
+      if (options.group_id) params.group_id = options.group_id;
+      if (options.user_id) params.user_id = options.user_id;
+      if (options.serial_number) params.serial_number = options.serial_number;
+      if (options.page) params.page = options.page;
+      if (options.page_size) params.page_size = options.page_size || 100;
+      if (options.user_sort) params.user_sort = JSON.stringify(options.user_sort);
+      
+      const response = await axios.get(`${this.baseUrl}/user/list`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('获取环境列表失败:', error.message);
+      throw error;
+    }
+  }
+  
+  // 获取分组列表
+  async getGroupList() {
+    try {
+      const response = await axios.get(`${this.baseUrl}/group/list`);
+      return response.data;
+    } catch (error) {
+      console.error('获取分组列表失败:', error.message);
+      throw error;
+    }
+  }
+}
+
+module.exports = AdsPowerAPI;

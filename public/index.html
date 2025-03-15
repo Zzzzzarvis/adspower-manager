@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsPower多环境管理器</title>
+  <link rel="stylesheet" href="/css/old-style.css">
+  <link rel="stylesheet" href="/css/ai-styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 消息容器 -->
+    <div id="message" class="message" style="display: none;"></div>
+    
+    <!-- 加载指示器 -->
+    <div id="loading" class="loading-overlay" style="display: none;">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">处理中...</div>
+    </div>
+    
+    <h1>AdsPower多环境管理器</h1>
+    
+    <div class="main-content">
+      <!-- 环境列表面板 -->
+      <div class="environments-panel">
+        <h2>环境列表</h2>
+        <div class="env-filters">
+          <div class="filter-row">
+            <button id="refresh-environments" class="btn-refresh">刷新环境</button>
+            <select id="group-selector" class="group-selector">
+              <option value="all">所有分组</option>
+            </select>
+          </div>
+          <div class="filter-row">
+            <input type="text" id="env-search" placeholder="搜索环境..." class="search-input">
+          </div>
+        </div>
+        
+        <div id="env-list" class="env-list"></div>
+        
+        <!-- 无环境消息 -->
+        <div id="no-environments-message" class="no-environments-message" style="display: none;">
+          <h3>未找到环境</h3>
+          <p>请确保AdsPower已启动并且API服务已启用</p>
+          <button onclick="fetchEnvironmentList()" class="retry-button">重试</button>
+        </div>
+      </div>
+      
+      <!-- 右侧面板 -->
+      <div class="right-panel">
+        <!-- AI命令面板 -->
+        <div class="ai-command-panel">
+          <div class="panel-header">AI指令</div>
+          <div class="ai-input-container">
+            <input type="text" id="ai-command-input" placeholder="输入指令...">
+            <select id="ai-model-selector" class="ai-model-selector">
+              <option value="default">GPT-4</option>
+              <option value="deepseek">DeepSeek</option>
+            </select>
+            <button id="command-btn" class="btn-execute">执行</button>
+          </div>
+          <div id="ai-status" class="ai-status ready">
+            <div class="status-indicator"></div>
+            <span class="status-text">AI助手就绪</span>
+          </div>
+        </div>
+        
+        <!-- 任务日志面板 -->
+        <div class="task-logs-panel">
+          <div class="panel-header">任务日志</div>
+          <div class="task-selection">
+            <select id="task-selector" disabled>
+              <option value="">无活动任务</option>
+            </select>
+          </div>
+          <div id="logs-container" class="logs-container">
+            <div class="log-entry">系统初始化中...</div>
+          </div>
+        </div>
+        
+        <!-- 错误分析面板 -->
+        <div class="error-analysis-panel">
+          <div class="panel-header">错误分析</div>
+          <div id="error-chart-container" class="error-chart-container">
+            <div class="no-data-message">无错误数据</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="/js/main.js"></script>
+  <script src="/js/ai-client.js"></script>
+</body>
+</html> 

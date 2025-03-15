@@ -1,0 +1,22 @@
+{
+  "// 配置说明": "将此文件复制为config.json并填入您的配置",
+  
+  "// === API配置 ===": "",
+  "// OpenAI API配置": "",
+  "openaiApiKey": "您的OpenAI API密钥",
+  "openaiApiUrl": "https://api.vveai.com",
+  
+  "// DeepSeek API配置": "",
+  "deepseekApiKey": "您的DeepSeek API密钥",
+  
+  "// === 应用配置 ===": "",
+  "port": 3002,
+  "logLevel": "info",
+  
+  "// === AI配置 ===": "",
+  "aiRateLimits": {
+    "maxRequestsPerMinute": 10,
+    "retryCount": 3,
+    "retryDelay": 2000
+  }
+} 

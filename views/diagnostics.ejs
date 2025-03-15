@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsPower API 诊断</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+    .diagnostic-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+    .diagnostic-section {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .json-display {
+      font-family: monospace;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .badge-diagnostic {
+      font-size: 1rem;
+      padding: 0.5rem 0.75rem;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .api-test-buttons {
+      margin-bottom: 20px;
+    }
+    .command-box {
+      background-color: #212529;
+      color: #fff;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 10px 0;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagnostic-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>AdsPower API 诊断</h1>
+      <div>
+        <button id="refreshBtn" class="btn btn-primary">刷新诊断</button>
+        <a href="/" class="btn btn-outline-secondary ms-2">返回主页</a>
+      </div>
+    </div>
+    
+    <div class="alert alert-info">
+      此页面用于诊断与AdsPower API的连接问题。点击"刷新诊断"按钮获取最新的API状态。
+    </div>
+    
+    <div id="diagnosticResults">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="mt-3">正在获取诊断数据...</p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    $(document).ready(function() {
+      // 页面加载后自动获取诊断数据
+      getDiagnostics();
+      
+      // 点击刷新按钮
+      $('#refreshBtn').click(function() {
+        getDiagnostics();
+      });
+      
+      // 获取诊断数据
+      function getDiagnostics() {
+        $('#diagnosticResults').html(`
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">加载中...</span>
+            </div>
+            <p class="mt-3">正在获取诊断数据...</p>
+          </div>
+        `);
+        
+        $.ajax({
+          url: '/api/diagnostics',
+          method: 'GET',
+          success: function(response) {
+            if (response.success) {
+              renderDiagnostics(response.diagnostics);
+            } else {
+              $('#diagnosticResults').html(`
+                <div class="alert alert-danger">
+                  获取诊断数据失败: ${response.error || '未知错误'}
+                </div>
+              `);
+            }
+          },
+          error: function(xhr, status, error) {
+            $('#diagnosticResults').html(`
+              <div class="alert alert-danger">
+                请求诊断API失败: ${error || '未知错误'}
+              </div>
+            `);
+          }
+        });
+      }
+      
+      // 渲染诊断结果
+      function renderDiagnostics(diagnostics) {
+        let html = '';
+        
+        // 连接测试结果
+        html += `
+          <div class="diagnostic-section">
+            <h3>连接状态</h3>
+            <div class="mb-3">
+              <span class="badge ${diagnostics.connectionTest ? 'bg-success' : 'bg-danger'} badge-diagnostic">
+                API 连接 ${diagnostics.connectionTest ? '成功' : '失败'}
+              </span>
+            </div>
+          </div>
+        `;
+        
+        // 环境列表API测试结果
+        html += `
+          <div class="diagnostic-section">
+            <h3>环境列表 API</h3>
+            <div class="mb-3">
+              <span class="badge ${diagnostics.environmentList.success ? 'bg-success' : 'bg-danger'} badge-diagnostic">
+                请求状态: ${diagnostics.environmentList.success ? '成功' : '失败'}
+              </span>
+              <span class="badge bg-info badge-diagnostic">
+                环境数量: ${diagnostics.environmentList.environmentCount || 0}
+              </span>
+              <span class="badge bg-secondary badge-diagnostic">
+                API 状态码: ${diagnostics.environmentList.code}
+              </span>
+            </div>
+            
+            <div class="mb-3">
+              <p><strong>数据类型:</strong> ${diagnostics.environmentList.dataType}</p>
+              <p><strong>包含 list 属性:</strong> ${diagnostics.environmentList.hasListProperty ? '是' : '否'}</p>
+              <p><strong>消息:</strong> ${diagnostics.environmentList.message}</p>
+            </div>
+            
+            ${diagnostics.environmentList.sample ? `
+              <div class="mb-3">
+                <h5>环境示例:</h5>
+                <div class="json-display">${JSON.stringify(diagnostics.environmentList.sample, null, 2)}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        // 直接请求结果
+        html += `
+          <div class="diagnostic-section">
+            <h3>直接 API 请求</h3>
+            <div class="mb-3">
+              <span class="badge ${diagnostics.directRequest.success ? 'bg-success' : 'bg-danger'} badge-diagnostic">
+                请求状态: ${diagnostics.directRequest.success ? '成功' : '失败'}
+              </span>
+              <span class="badge bg-info badge-diagnostic">
+                环境数量: ${diagnostics.directRequest.environmentCount || 0}
+              </span>
+              <span class="badge bg-secondary badge-diagnostic">
+                HTTP 状态码: ${diagnostics.directRequest.status}
+              </span>
+              <span class="badge bg-secondary badge-diagnostic">
+                API 状态码: ${diagnostics.directRequest.code}
+              </span>
+            </div>
+            
+            <div class="mb-3">
+              <p><strong>数据类型:</strong> ${diagnostics.directRequest.dataType}</p>
+              <p><strong>包含 list 属性:</strong> ${diagnostics.directRequest.hasListProperty ? '是' : '否'}</p>
+              <p><strong>消息:</strong> ${diagnostics.directRequest.message}</p>
+            </div>
+            
+            ${diagnostics.directRequest.sample ? `
+              <div class="mb-3">
+                <h5>环境示例:</h5>
+                <div class="json-display">${JSON.stringify(diagnostics.directRequest.sample, null, 2)}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        // 分组API测试结果
+        html += `
+          <div class="diagnostic-section">
+            <h3>分组 API</h3>
+            <div class="mb-3">
+              <span class="badge ${diagnostics.groups.success ? 'bg-success' : 'bg-danger'} badge-diagnostic">
+                请求状态: ${diagnostics.groups.success ? '成功' : '失败'}
+              </span>
+              <span class="badge bg-info badge-diagnostic">
+                分组数量: ${diagnostics.groups.groupCount || 0}
+              </span>
+              <span class="badge bg-secondary badge-diagnostic">
+                API 状态码: ${diagnostics.groups.code}
+              </span>
+            </div>
+            
+            <div class="mb-3">
+              <p><strong>数据类型:</strong> ${diagnostics.groups.dataType}</p>
+              <p><strong>包含 list 属性:</strong> ${diagnostics.groups.hasListProperty ? '是' : '否'}</p>
+              <p><strong>消息:</strong> ${diagnostics.groups.message}</p>
+            </div>
+          </div>
+        `;
+        
+        // 如果有nativeRequest结果，展示它
+        if (diagnostics.nativeRequest) {
+          html += `
+            <div class="diagnostic-section">
+              <h3>原生 HTTP 请求</h3>
+              <div class="mb-3">
+                <span class="badge ${diagnostics.nativeRequest.success ? 'bg-success' : 'bg-danger'} badge-diagnostic">
+                  请求状态: ${diagnostics.nativeRequest.success ? '成功' : '失败'}
+                </span>
+                <span class="badge bg-info badge-diagnostic">
+                  环境数量: ${diagnostics.nativeRequest.environmentCount || 0}
+                </span>
+                <span class="badge bg-secondary badge-diagnostic">
+                  API 状态码: ${diagnostics.nativeRequest.code}
+                </span>
+              </div>
+              
+              <div class="mb-3">
+                <p><strong>数据类型:</strong> ${diagnostics.nativeRequest.dataType}</p>
+                <p><strong>包含 list 属性:</strong> ${diagnostics.nativeRequest.hasListProperty ? '是' : '否'}</p>
+                <p><strong>消息:</strong> ${diagnostics.nativeRequest.message}</p>
+                ${diagnostics.nativeRequest.error ? `<p><strong>错误:</strong> ${diagnostics.nativeRequest.error}</p>` : ''}
+              </div>
+            </div>
+          `;
+        }
+        
+        // 测试命令
+        html += `
+          <div class="diagnostic-section">
+            <h3>测试命令</h3>
+            <p>您可以在终端中运行以下命令来手动测试API:</p>
+            ${diagnostics.testCommands.map(cmd => `
+              <div class="command-box">${cmd}</div>
+            `).join('')}
+          </div>
+        `;
+        
+        // 解决建议
+        html += `
+          <div class="diagnostic-section">
+            <h3>解决建议</h3>
+            <ul class="list-group">
+              <li class="list-group-item">确保AdsPower软件已启动并运行</li>
+              <li class="list-group-item">在AdsPower设置中检查API服务是否已启用</li>
+              <li class="list-group-item">确认API端口设置为50325</li>
+              <li class="list-group-item">检查是否有防火墙或安全软件阻止API访问</li>
+              <li class="list-group-item">重启AdsPower软件和本应用</li>
+              <li class="list-group-item">如果仍然有问题，可以尝试重新安装AdsPower</li>
+            </ul>
+          </div>
+        `;
+        
+        // 更新页面
+        $('#diagnosticResults').html(html);
+      }
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,421 @@
+/* AI相关的样式 */
+
+/* 容器样式 */
+.ai-container {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 16px;
+}
+
+.ai-container h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* AI状态样式 */
+.ai-status {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.ai-status .status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+  transition: all 0.3s ease;
+}
+
+.ai-status.ready {
+  background-color: #e8f5e9;
+  border-left: 3px solid #28a745;
+}
+
+.ai-status.ready .status-indicator {
+  background-color: #28a745;
+  box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+}
+
+.ai-status.processing {
+  background-color: #fff8e1;
+  border-left: 3px solid #ffc107;
+}
+
+.ai-status.processing .status-indicator {
+  background-color: #ffc107;
+  animation: pulse 1.5s infinite;
+}
+
+.ai-status.error {
+  background-color: #ffebee;
+  border-left: 3px solid #dc3545;
+}
+
+.ai-status.error .status-indicator {
+  background-color: #dc3545;
+  box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+}
+
+.ai-status .status-text {
+  font-weight: 500;
+}
+
+.ai-status.error .status-text {
+  color: #b71c1c;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* 控制行样式 - 优化控制行布局 */
+.ai-controls-row {
+  display: flex;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ai-control-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 调整模型选择器宽度，使其更紧凑 */
+.ai-control-model {
+  width: 150px; /* 缩小模型选择器宽度 */
+  flex-shrink: 0;
+}
+
+/* 环境选择器可以更宽 */
+.ai-control-env {
+  flex-grow: 1;
+  min-width: 220px;
+}
+
+/* 选择器样式 */
+.ai-model-selector, .ai-env-selector {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  background-color: #fff;
+  font-size: 0.9em;
+  width: 100%;
+}
+
+/* 输入容器 - 增大输入区域 */
+.ai-input-container {
+  margin-bottom: 12px;
+}
+
+.ai-input-container textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 200px; /* 增加最小高度 */
+  max-height: 500px; /* 增加最大高度 */
+}
+
+.ai-button-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.primary-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.primary-button:hover {
+  background-color: #0069d9;
+}
+
+/* 日志容器 - 调整高度，使其更紧凑 */
+.logs-container {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  background-color: #f8f9fa;
+}
+
+.logs-container .initial-message {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+/* 命令结果样式 */
+.logs-container .alert {
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+/* 避免结果过宽 */
+.logs-container .alert .d-flex {
+  flex-wrap: wrap;
+}
+
+/* 日志样式 */
+.log-entry {
+  padding: 6px 8px; /* 减小内边距使日志更紧凑 */
+  margin-bottom: 5px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #6c757d;
+  font-family: 'Courier New', monospace;
+  word-break: break-word;
+  font-size: 0.9em; /* 稍微减小字体 */
+}
+
+.log-time {
+  color: #6c757d;
+  font-size: 0.8em;
+  margin-right: 8px;
+}
+
+.log-info {
+  border-left-color: #17a2b8;
+}
+
+.log-warning {
+  border-left-color: #ffc107;
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.log-error {
+  border-left-color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.log-pending {
+  border-left-color: #6c757d;
+  background-color: rgba(108, 117, 125, 0.1);
+  font-style: italic;
+}
+
+.log-ai-response {
+  border-left-color: #28a745;
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+/* 代码块样式 */
+.code-block {
+  background-color: #282c34;
+  color: #abb2bf;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 10px 0;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* 通知样式 */
+#notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.notification {
+  margin-bottom: 10px;
+  padding: 12px 15px;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  max-width: 350px;
+  animation: slide-in 0.3s ease-out;
+  transition: opacity 0.5s ease-out;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notification-message {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  opacity: 0.5;
+}
+
+.notification-close:hover {
+  opacity: 1;
+}
+
+.notification-info {
+  border-left: 4px solid #17a2b8;
+}
+
+.notification-success {
+  border-left: 4px solid #28a745;
+}
+
+.notification-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.notification-error {
+  border-left: 4px solid #dc3545;
+}
+
+.notification.fade-out {
+  opacity: 0;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* 禁用状态样式 */
+.ai-input-container input:disabled,
+.ai-input-container select:disabled,
+.ai-input-container button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 辅助类 - 左右对齐 */
+.ml-auto {
+  margin-left: auto;
+}
+
+/* 迷你按钮样式 */
+.mini-button {
+  background: none;
+  border: none;
+  font-size: 0.9em;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 3px;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.mini-button:hover {
+  background-color: rgba(0,0,0,0.05);
+  color: #495057;
+}
+
+.mini-button:active {
+  background-color: rgba(0,0,0,0.1);
+}
+
+/* 错误状态下突出重试按钮 */
+.ai-status.error .mini-button {
+  color: #dc3545;
+  animation: pulse-light 2s infinite;
+}
+
+.ai-status.error .mini-button:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  animation: none;
+}
+
+@keyframes pulse-light {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* 错误分析面板 - 缩小 */
+.error-analysis-container {
+  max-height: 150px; /* 减小最大高度 */
+  overflow-y: auto;
+  margin-top: 20px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .ai-controls-row {
+    flex-direction: column;
+  }
+  
+  .ai-control-model, .ai-control-env {
+    width: 100%;
+  }
+}
+
+/* AI状态指示器 */
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-indicator.loading {
+  background-color: #ffc107;
+  animation: blink 1s infinite;
+}
+
+.status-indicator.ready {
+  background-color: #28a745;
+}
+
+.status-indicator.error {
+  background-color: #dc3545;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+} 

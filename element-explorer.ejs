@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>元素探索器 - AdsPower管理器</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+  <style>
+    body { padding: 20px; }
+    #screenshot { max-width: 100%; border: 1px solid #ddd; margin-bottom: 20px; position: relative; }
+    .element-item { cursor: pointer; padding: 8px; border-bottom: 1px solid #eee; transition: background-color 0.2s; }
+    .element-item:hover { background-color: #f5f5f5; }
+    .element-details { font-size: 12px; color: #666; }
+    .loading { text-align: center; padding: 20px; }
+    .selected { background-color: #e7f3ff !important; }
+    .element-highlight { position: absolute; border: 2px solid red; background-color: rgba(255, 0, 0, 0.2); z-index: 100; pointer-events: none; }
+    .element-actions { margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
+    .refresh-controls { margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">AdsPower管理器</a>
+        <span class="navbar-text text-light">
+          元素探索器 - 环境 <%= envId %>
+        </span>
+      </div>
+    </nav>
+
+    <div class="row mb-3">
+      <div class="col">
+        <div class="refresh-controls">
+          <button id="refreshBtn" class="btn btn-primary">刷新页面</button>
+          <button id="backBtn" class="btn btn-secondary ms-2">返回主页</button>
+          <span id="statusMessage" class="ms-3 text-muted"></span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-8">
+        <div id="screenshotContainer" class="mb-3">
+          <div class="loading">正在加载截图...</div>
+        </div>
+        <div id="selectedElementInfo" class="element-actions d-none">
+          <h5>元素信息</h5>
+          <div id="elementDetails"></div>
+          <div class="mt-3">
+            <button id="clickElementBtn" class="btn btn-success btn-sm">点击此元素</button>
+            <button id="typeTextBtn" class="btn btn-info btn-sm ms-2 d-none">输入文本</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-header">
+            元素查找
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <input type="text" id="selectorInput" class="form-control" placeholder="输入CSS选择器或文本...">
+            </div>
+            <div class="d-flex">
+              <button id="searchByCssBtn" class="btn btn-primary btn-sm me-2">CSS查找</button>
+              <button id="searchByTextBtn" class="btn btn-info btn-sm">文本查找</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>页面元素</span>
+            <div>
+              <button id="showAllBtn" class="btn btn-sm btn-outline-secondary">所有元素</button>
+              <button id="showClickableBtn" class="btn btn-sm btn-outline-primary ms-1">可点击元素</button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div id="elementsContainer" style="height: 500px; overflow-y: auto;">
+              <div class="loading">正在加载元素...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 输入文本模态框 -->
+  <div class="modal fade" id="textInputModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">输入文本</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="textToType" class="form-control" placeholder="请输入要输入的文本...">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" id="confirmTypeText">确认</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const envId = '<%= envId %>';
+    let selectedElement = null;
+    let allElements = [];
+    
+    $(document).ready(function() {
+      refreshPageData();
+      
+      // 刷新按钮
+      $('#refreshBtn').click(refreshPageData);
+      
+      // 返回主页
+      $('#backBtn').click(function() {
+        window.location.href = '/';
+      });
+      
+      // CSS选择器查找
+      $('#searchByCssBtn').click(function() {
+        const selector = $('#selectorInput').val().trim();
+        if (selector) {
+          loadElements(selector);
+        }
+      });
+      
+      // 文本查找
+      $('#searchByTextBtn').click(function() {
+        const text = $('#selectorInput').val().trim();
+        if (text) {
+          searchElementsByText(text);
+        }
+      });
+      
+      // 点击元素
+      $('#clickElementBtn').click(function() {
+        if (selectedElement) {
+          clickElement(selectedElement.selector, selectedElement.index);
+        }
+      });
+      
+      // 显示所有元素
+      $('#showAllBtn').click(function() {
+        loadAllElements();
+      });
+      
+      // 显示可点击元素
+      $('#showClickableBtn').click(function() {
+        loadClickableElements();
+      });
+      
+      // 输入文本
+      $('#typeTextBtn').click(function() {
+        if (selectedElement && (selectedElement.tagName === 'INPUT' || selectedElement.tagName === 'TEXTAREA')) {
+          $('#textInputModal').modal('show');
+        }
+      });
+      
+      // 确认输入文本
+      $('#confirmTypeText').click(function() {
+        const text = $('#textToType').val();
+        typeText(selectedElement.selector, text);
+        $('#textInputModal').modal('hide');
+      });
+    });
+    
+    // 刷新页面数据
+    function refreshPageData() {
+      loadScreenshot();
+      loadClickableElements();
+      updateStatus('页面已刷新');
+    }
+    
+    // 加载截图
+    function loadScreenshot() {
+      $('#screenshotContainer').html('<div class="loading">正在加载截图...</div>');
+      
+      const img = new Image();
+      img.id = 'screenshot';
+      img.onload = function() {
+        $('#screenshotContainer').html('').append(img);
+      };
+      img.onerror = function() {
+        $('#screenshotContainer').html('<div class="alert alert-danger">加载截图失败</div>');
+      };
+      img.src = `/api/environment/screenshot?envId=${envId}&t=${new Date().getTime()}`;
+    }
+    
+    // 加载所有元素
+    function loadAllElements() {
+      loadElements();
+    }
+    
+    // 加载可点击元素
+    function loadClickableElements() {
+      loadElements('');
+    }
+    
+    // 加载指定选择器的元素
+    function loadElements(selector = '') {
+      $('#elementsContainer').html('<div class="loading">正在加载元素...</div>');
+      
+      $.ajax({
+        url: `/api/environment/elements?envId=${envId}&selector=${selector}`,
+        method: 'GET',
+        success: function(response) {
+          if (response.success && response.elements) {
+            allElements = response.elements;
+            renderElements(response.elements);
+          } else {
+            $('#elementsContainer').html('<div class="alert alert-warning">没有找到元素</div>');
+          }
+        },
+        error: function(error) {
+          $('#elementsContainer').html('<div class="alert alert-danger">加载元素失败</div>');
+          console.error('加载元素失败:', error);
+        }
+      });
+    }
+    
+    // 文本搜索元素
+    function searchElementsByText(text) {
+      $('#elementsContainer').html('<div class="loading">正在搜索元素...</div>');
+      
+      $.ajax({
+        url: `/api/environment/search-elements-by-text?envId=${envId}&text=${text}`,
+        method: 'GET',
+        success: function(response) {
+          if (response.success && response.elements) {
+            allElements = response.elements;
+            renderElements(response.elements);
+          } else {
+            $('#elementsContainer').html('<div class="alert alert-warning">没有找到包含文本的元素</div>');
+          }
+        },
+        error: function(error) {
+          $('#elementsContainer').html('<div class="alert alert-danger">搜索元素失败</div>');
+          console.error('搜索元素失败:', error);
+        }
+      });
+    }
+    
+    // 渲染元素列表
+    function renderElements(elements) {
+      if (elements.length === 0) {
+        $('#elementsContainer').html('<div class="alert alert-warning">没有找到元素</div>');
+        return;
+      }
+      
+      const $container = $('<div class="list-group"></div>');
+      
+      elements.forEach((element, index) => {
+        const $item = $(`
+          <div class="element-item list-group-item" data-index="${index}">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <strong>${element.tagName}</strong>
+                ${element.text ? `<span class="ms-2 text-primary">"${truncateText(element.text, 30)}"</span>` : ''}
+              </div>
+              <span class="badge bg-secondary">${index}</span>
+            </div>
+            <div class="element-details mt-1">
+              ${element.id ? `ID: ${element.id}` : ''}
+              ${element.className ? `Class: ${truncateText(element.className, 30)}` : ''}
+              ${element.selector ? `Selector: ${truncateText(element.selector, 40)}` : ''}
+            </div>
+          </div>
+        `);
+        
+        $item.click(function() {
+          $('.element-item').removeClass('selected');
+          $(this).addClass('selected');
+          const index = $(this).data('index');
+          selectElement(elements[index], index);
+        });
+        
+        $container.append($item);
+      });
+      
+      $('#elementsContainer').html('').append($container);
+    }
+    
+    // 选择元素
+    function selectElement(element, index) {
+      selectedElement = { ...element, index };
+      
+      // 显示元素信息
+      const detailsHtml = `
+        <table class="table table-sm">
+          <tr><th>类型</th><td>${element.tagName}</td></tr>
+          <tr><th>文本</th><td>${element.text || '-'}</td></tr>
+          <tr><th>ID</th><td>${element.id || '-'}</td></tr>
+          <tr><th>Class</th><td>${element.className || '-'}</td></tr>
+          <tr><th>选择器</th><td>${element.selector || '-'}</td></tr>
+          <tr><th>可见性</th><td>${element.isVisible ? '可见' : '不可见'}</td></tr>
+        </table>
+      `;
+      
+      $('#elementDetails').html(detailsHtml);
+      $('#selectedElementInfo').removeClass('d-none');
+      
+      // 显示/隐藏输入文本按钮
+      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+        $('#typeTextBtn').removeClass('d-none');
+      } else {
+        $('#typeTextBtn').addClass('d-none');
+      }
+      
+      // 在截图上高亮显示元素
+      highlightElement(element);
+    }
+    
+    // 在截图上高亮显示元素
+    function highlightElement(element) {
+      $('.element-highlight').remove();
+      
+      if (element.rect) {
+        const $screenshot = $('#screenshot');
+        const screenshotWidth = $screenshot.width();
+        const screenshotRatio = screenshotWidth / $screenshot[0].naturalWidth;
+        
+        const highlight = $('<div class="element-highlight"></div>');
+        highlight.css({
+          left: element.rect.left * screenshotRatio,
+          top: element.rect.top * screenshotRatio,
+          width: element.rect.width * screenshotRatio,
+          height: element.rect.height * screenshotRatio
+        });
+        
+        $('#screenshotContainer').append(highlight);
+      }
+    }
+    
+    // 点击元素
+    function clickElement(selector, index) {
+      $.ajax({
+        url: '/api/environment/click-element',
+        method: 'POST',
+        data: JSON.stringify({
+          envId: envId,
+          selector: selector,
+          index: index
+        }),
+        contentType: 'application/json',
+        success: function(response) {
+          if (response.success) {
+            updateStatus('点击成功: ' + response.message);
+            setTimeout(refreshPageData, 1000);
+          } else {
+            updateStatus('点击失败: ' + response.message, true);
+          }
+        },
+        error: function(error) {
+          updateStatus('点击请求失败', true);
+          console.error('点击请求失败:', error);
+        }
+      });
+    }
+    
+    // 输入文本
+    function typeText(selector, text) {
+      $.ajax({
+        url: `/api/element-explorer/type-text/${envId}`,
+        method: 'POST',
+        data: JSON.stringify({
+          selector: selector,
+          text: text
+        }),
+        contentType: 'application/json',
+        success: function(response) {
+          if (response.success) {
+            updateStatus('文本输入成功');
+            setTimeout(refreshPageData, 1000);
+          } else {
+            updateStatus('文本输入失败: ' + response.message, true);
+          }
+        },
+        error: function(error) {
+          updateStatus('文本输入请求失败', true);
+          console.error('文本输入请求失败:', error);
+        }
+      });
+    }
+    
+    // 更新状态消息
+    function updateStatus(message, isError = false) {
+      const $status = $('#statusMessage');
+      $status.text(message);
+      
+      if (isError) {
+        $status.removeClass('text-muted text-success').addClass('text-danger');
+      } else {
+        $status.removeClass('text-muted text-danger').addClass('text-success');
+      }
+      
+      setTimeout(() => {
+        $status.removeClass('text-success text-danger').addClass('text-muted');
+      }, 3000);
+    }
+    
+    // 截断文本
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+  </script>
+</body>
+</html>

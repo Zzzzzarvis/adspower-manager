@@ -1,0 +1,182 @@
+[
+  {
+    "id": "login",
+    "name": "通用登录流程",
+    "description": "在网站上执行通用的登录流程",
+    "actions": [
+      {
+        "type": "waitForElement",
+        "selector": "#username, input[name='username'], input[type='email'], input[name='email']",
+        "description": "等待用户名/邮箱输入框"
+      },
+      {
+        "type": "type",
+        "selector": "#username, input[name='username'], input[type='email'], input[name='email']",
+        "text": "{{username}}",
+        "description": "输入用户名/邮箱"
+      },
+      {
+        "type": "waitForElement",
+        "selector": "#password, input[name='password'], input[type='password']",
+        "description": "等待密码输入框"
+      },
+      {
+        "type": "type",
+        "selector": "#password, input[name='password'], input[type='password']",
+        "text": "{{password}}",
+        "description": "输入密码"
+      },
+      {
+        "type": "click",
+        "selector": "button[type='submit'], input[type='submit'], .login-button, .btn-login, button:contains('登录'), button:contains('Login')",
+        "description": "点击登录按钮"
+      },
+      {
+        "type": "wait",
+        "time": 3000,
+        "description": "等待登录完成"
+      }
+    ],
+    "variables": [
+      {
+        "name": "username",
+        "description": "用户名/邮箱",
+        "required": true
+      },
+      {
+        "name": "password",
+        "description": "密码",
+        "required": true,
+        "sensitive": true
+      }
+    ]
+  },
+  {
+    "id": "search",
+    "name": "搜索内容",
+    "description": "在搜索引擎中搜索指定内容",
+    "actions": [
+      {
+        "type": "navigate",
+        "url": "{{searchEngine}}",
+        "description": "导航到搜索引擎"
+      },
+      {
+        "type": "waitForElement",
+        "selector": "input[type='text'], input[type='search'], input[name='q'], input[name='query']",
+        "description": "等待搜索框"
+      },
+      {
+        "type": "type",
+        "selector": "input[type='text'], input[type='search'], input[name='q'], input[name='query']",
+        "text": "{{searchTerm}}",
+        "description": "输入搜索词"
+      },
+      {
+        "type": "click",
+        "selector": "button[type='submit'], input[type='submit'], .search-button",
+        "description": "点击搜索按钮"
+      },
+      {
+        "type": "wait",
+        "time": 3000,
+        "description": "等待搜索结果加载"
+      }
+    ],
+    "variables": [
+      {
+        "name": "searchEngine",
+        "description": "搜索引擎URL",
+        "required": true,
+        "defaultValue": "https://www.baidu.com"
+      },
+      {
+        "name": "searchTerm",
+        "description": "搜索关键词",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "fillForm",
+    "name": "填写表单",
+    "description": "通用表单填写流程",
+    "actions": [
+      {
+        "type": "waitForElement",
+        "selector": "form",
+        "description": "等待表单加载"
+      },
+      {
+        "type": "evaluate",
+        "script": "const formData = {{formData}}; for (const [selector, value] of Object.entries(formData)) { const elem = document.querySelector(selector); if (elem) { elem.value = value; const event = new Event('input', { bubbles: true }); elem.dispatchEvent(event); } }",
+        "description": "填写表单字段"
+      },
+      {
+        "type": "wait",
+        "time": 1000,
+        "description": "表单填写后等待"
+      },
+      {
+        "type": "click",
+        "selector": "button[type='submit'], input[type='submit']",
+        "description": "提交表单"
+      }
+    ],
+    "variables": [
+      {
+        "name": "formData",
+        "description": "表单数据 (JSON格式，键为选择器，值为填入内容)",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "browserInfo",
+    "name": "获取浏览器信息",
+    "description": "获取当前浏览器的信息",
+    "actions": [
+      {
+        "type": "evaluate",
+        "script": "return { url: window.location.href, title: document.title, cookies: document.cookie, userAgent: navigator.userAgent, screenSize: { width: window.screen.width, height: window.screen.height } }",
+        "description": "获取浏览器信息"
+      }
+    ],
+    "variables": []
+  },
+  {
+    "id": "monitor",
+    "name": "页面监控",
+    "description": "监控页面上某个元素的变化",
+    "actions": [
+      {
+        "type": "navigate",
+        "url": "{{url}}",
+        "description": "导航到目标页面"
+      },
+      {
+        "type": "evaluate",
+        "script": "let previousValue = null; const interval = setInterval(() => { const element = document.querySelector('{{selector}}'); if (!element) return; const currentValue = element.innerText; if (previousValue !== null && currentValue !== previousValue) { console.log('元素内容发生变化:', currentValue); } previousValue = currentValue; }, {{intervalMs}}); return 'Started monitoring {{selector}}';",
+        "description": "开始监控元素变化"
+      }
+    ],
+    "variables": [
+      {
+        "name": "url",
+        "description": "要监控的页面URL",
+        "required": true
+      },
+      {
+        "name": "selector",
+        "description": "要监控的元素选择器",
+        "required": true
+      },
+      {
+        "name": "intervalMs",
+        "description": "检查间隔(毫秒)",
+        "required": false,
+        "defaultValue": 5000
+      }
+    ]
+  }
+]

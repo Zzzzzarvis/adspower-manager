@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdsPower多环境管理器</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>AdsPower多环境管理器</h1>
+    
+    <!-- 添加导航菜单 -->
+    <div class="nav-menu">
+      <a href="/" class="nav-item active">首页</a>
+      <a href="#" id="nav-element-explorer" class="nav-item">元素探索器</a>
+    </div>
+    
+    <div class="main-content">
+      <!-- 左侧环境列表 -->
+      <div class="environments-panel">
+        <h2>环境列表</h2>
+        
+        <!-- 分组选择 -->
+        <div class="group-selection">
+          <select id="group-select">
+            <option value="">-- 所有分组 --</option>
+            <% if (Array.isArray(groups) && groups.length > 0) { %>
+              <% groups.forEach(function(group) { %>
+                <option value="<%= group.group_id %>" <%= selectedGroup === group.group_id ? 'selected' : '' %>>
+                  <%= group.group_name %> (<%= group.count || 0 %>)
+                </option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+        
+        <div class="env-list">
+          <% if (!environments || environments.length === 0) { %>
+            <div class="empty-list">没有找到环境，请尝试选择其他分组</div>
+          <% } else { %>
+            <% environments.forEach(function(env) { %>
+              <div class="env-item <%= env.status === 'running' ? 'active' : '' %>" data-id="<%= env.id %>">
+                <div class="env-info">
+                  <span class="env-id"><%= env.id %></span>
+                </div>
+                <div class="env-name">
+                  <%= env.name || '环境 ' + env.id %>
+                  <% if (env.notes) { %>
+                    <span class="env-note-badge" title="<%= env.notes %>">📝</span>
+                  <% } %>
+                </div>
+                <div class="env-status-container">
+                  <span class="env-status <%= env.status === 'running' ? 'status-running' : 'status-stopped' %>">
+                    <%= env.status === 'running' ? '运行中' : '已停止' %>
+                  </span>
+                  <% if (activeTasks && activeTasks[env.id]) { %>
+                    <span class="env-task" title="正在执行任务: <%= activeTasks[env.id].name %>">
+                      ⚙️ <%= activeTasks[env.id].name %>
+                    </span>
+                  <% } %>
+                </div>
+                <div class="env-actions">
+                  <% if (env.status !== 'running') { %>
+                    <button class="btn-start" data-id="<%= env.id %>">启动</button>
+                  <% } else { %>
+                    <button class="btn-stop" data-id="<%= env.id %>">停止</button>
+                    <!-- 添加元素探索器按钮 -->
+                    <a href="/element-explorer/<%= env.id %>" class="btn-explore">探索元素</a>
+                  <% } %>
+                </div>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+        <button id="btn-refresh-envs" class="btn-refresh">刷新状态</button>
+      </div>
+      
+      <!-- 右侧内容区 -->
+      <div class="content-panel">
+        <!-- 日志区域 -->
+        <div class="log-panel">
+          <h2>操作日志</h2>
+          <div id="log-content" class="log-content"></div>
+          <button id="btn-clear-log" class="btn-clear">清空日志</button>
+        </div>
+        
+        <!-- 命令区域 -->
+        <div class="command-panel">
+          <h2>命令控制</h2>
+          
+          <div class="selected-env-info">
+            <span>当前选择: </span>
+            <span id="selected-env-id">未选择</span>
+          </div>
+          
+          <!-- 环境备注 -->
+          <div class="env-note-section">
+            <h3>环境备注</h3>
+            <input type="text" id="env-note-input" placeholder="添加备注以便识别环境..." maxlength="30">
+            <button id="btn-save-note" disabled>保存备注</button>
+          </div>
+          
+          <!-- 任务模板选择 -->
+          <div class="task-selection">
+            <h3>预设任务</h3>
+            <select id="task-select">
+              <option value="">-- 选择任务 --</option>
+              <% if (Array.isArray(tasks) && tasks.length > 0) { %>
+                <% tasks.forEach(function(task) { %>
+                  <option value="<%= task.id %>"><%= task.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+            <button id="btn-run-task" disabled>执行任务</button>
+          </div>
+          
+          <!-- 自定义命令 -->
+          <div class="custom-command">
+            <h3>自定义命令</h3>
+            <textarea id="command-input" placeholder="输入JavaScript代码..."></textarea>
+            <button id="btn-execute-command" disabled>执行命令</button>
+          </div>
+          
+          <!-- AI命令 -->
+          <div class="ai-command">
+            <h3>AI助手命令</h3>
+            <p class="command-help">直接用自然语言描述您想执行的操作，如"登录网站，用户名为admin"</p>
+            <textarea id="ai-command-input" placeholder="输入您想执行的操作..."></textarea>
+            <button id="btn-execute-ai-command" disabled <%= !openaiEnabled ? 'title="OpenAI API密钥未配置"' : '' %>>
+              执行AI命令 <%= !openaiEnabled ? '(未启用)' : '' %>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 添加元素探索器导航处理
+    document.addEventListener('DOMContentLoaded', function() {
+      const navExplorer = document.getElementById('nav-element-explorer');
+      if (navExplorer) {
+        navExplorer.addEventListener('click', function(event) {
+          event.preventDefault();
+          
+          // 获取当前选中的环境
+          const selectedEnvElement = document.querySelector('.env-item.active');
+          if (!selectedEnvElement) {
+            alert('请先选择并启动一个环境');
+            return;
+          }
+          
+          const envId = selectedEnvElement.getAttribute('data-id');
+          if (envId) {
+            window.location.href = `/element-explorer/${envId}`;
+          } else {
+            alert('无法确定环境ID');
+          }
+        });
+      }
+    });
+  </script>
+  
+  <% if (typeof scripts !== 'undefined' && Array.isArray(scripts)) { %>
+    <% scripts.forEach(function(script) { %>
+      <script src="<%= script %>"></script>
+    <% }); %>
+  <% } else { %>
+    <script src="/js/main.js"></script>
+  <% } %>
+</body>
+</html>

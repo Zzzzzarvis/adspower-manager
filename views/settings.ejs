@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 - AdsPower管理器</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    body { padding: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .api-key-input { font-family: monospace; }
+    .api-status { margin-left: 10px; }
+    .api-status.enabled { color: green; }
+    .api-status.disabled { color: red; }
+    .password-toggle { cursor: pointer; }
+    .settings-card { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <h1>API 设置</h1>
+        <p>在此页面配置各种API密钥，这些密钥仅存储在本地配置文件中。</p>
+        
+        <% if (locals.message) { %>
+          <div class="alert alert-<%= locals.messageType || 'info' %> alert-dismissible fade show" role="alert">
+            <%= message %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+          </div>
+        <% } %>
+        
+        <a href="/" class="btn btn-outline-secondary mb-4">
+          <i class="fas fa-arrow-left"></i> 返回主页
+        </a>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-md-8">
+        <form action="/api/settings/update" method="POST">
+          
+          <!-- AdsPower API 设置 -->
+          <div class="card settings-card">
+            <div class="card-header">
+              <h5>AdsPower API 设置</h5>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <p class="text-muted">AdsPower API 用于与AdsPower软件通信，通常不需要密钥，仅需配置正确的端口。</p>
+                <label for="adsPowerPort">AdsPower API 端口</label>
+                <input type="number" class="form-control" id="adsPowerPort" name="adsPowerPort" value="<%= locals.settings?.adsPowerPort || 50325 %>">
+                <small class="form-text text-muted">默认端口为 50325，除非您在AdsPower软件中更改了API端口，否则无需修改此设置。</small>
+              </div>
+              
+              <div class="form-group mt-3">
+                <label>API 状态:</label>
+                <span class="api-status <%= locals.adspower && locals.adspower.connected ? 'enabled' : 'disabled' %>">
+                  <i class="fas <%= locals.adspower && locals.adspower.connected ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
+                  <%= locals.adspower && locals.adspower.connected ? '已连接' : '未连接' %>
+                </span>
+                <% if (!(locals.adspower && locals.adspower.connected)) { %>
+                  <div class="alert alert-warning mt-2">
+                    <i class="fas fa-exclamation-triangle"></i> AdsPower API 连接失败。请确保:
+                    <ul>
+                      <li>AdsPower 软件已启动</li>
+                      <li>在 AdsPower 设置中启用了 API 服务</li>
+                      <li>API 端口设置正确 (默认: 50325)</li>
+                    </ul>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          
+          <!-- AI API 设置 -->
+          <div class="card settings-card mt-4">
+            <div class="card-header">
+              <h5>AI API 设置</h5>
+            </div>
+            <div class="card-body">
+              <!-- OpenAI API 密钥 -->
+              <div class="form-group">
+                <label for="openaiApiKey">OpenAI API 密钥</label>
+                <div class="input-group">
+                  <input type="password" class="form-control api-key-input" id="openaiApiKey" name="openaiApiKey" 
+                         placeholder="sk-..." value="<%= locals.settings?.openaiApiKey || '' %>">
+                  <span class="input-group-text password-toggle" onclick="togglePasswordVisibility('openaiApiKey')">
+                    <i class="fas fa-eye"></i>
+                  </span>
+                </div>
+                <small class="form-text text-muted">
+                  格式为 "sk-..." 的OpenAI API密钥。可从 <a href="https://platform.openai.com/account/api-keys" target="_blank">OpenAI 平台</a> 获取。
+                </small>
+                <div class="mt-2">
+                  <label>API 状态:</label>
+                  <span class="api-status <%= locals.openai && locals.openai.configured ? 'enabled' : 'disabled' %>">
+                    <i class="fas <%= locals.openai && locals.openai.configured ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
+                    <%= locals.openai && locals.openai.configured ? '已配置' : '未配置' %>
+                  </span>
+                </div>
+              </div>
+              
+              <!-- OpenAI API URL (可选) -->
+              <div class="form-group mt-3">
+                <label for="openaiApiUrl">OpenAI API URL (可选)</label>
+                <input type="text" class="form-control" id="openaiApiUrl" name="openaiApiUrl" 
+                       placeholder="https://api.openai.com" value="<%= locals.settings?.openaiApiUrl || '' %>">
+                <small class="form-text text-muted">
+                  可选的API 基础URL。如果使用官方OpenAI API，可以留空；如果使用代理或兼容API，请设置相应的URL。
+                </small>
+              </div>
+              
+              <!-- DeepSeek API 密钥 -->
+              <div class="form-group mt-3">
+                <label for="deepseekApiKey">DeepSeek API 密钥</label>
+                <div class="input-group">
+                  <input type="password" class="form-control api-key-input" id="deepseekApiKey" name="deepseekApiKey" 
+                         placeholder="sk-..." value="<%= locals.settings?.deepseekApiKey || '' %>">
+                  <span class="input-group-text password-toggle" onclick="togglePasswordVisibility('deepseekApiKey')">
+                    <i class="fas fa-eye"></i>
+                  </span>
+                </div>
+                <small class="form-text text-muted">
+                  格式为 "sk-..." 的DeepSeek API密钥。可从 <a href="https://platform.deepseek.com" target="_blank">DeepSeek 平台</a> 获取。
+                </small>
+                <div class="mt-2">
+                  <label>API 状态:</label>
+                  <span class="api-status <%= locals.deepseek && locals.deepseek.configured ? 'enabled' : 'disabled' %>">
+                    <i class="fas <%= locals.deepseek && locals.deepseek.configured ? 'fa-check-circle' : 'fa-times-circle' %>"></i>
+                    <%= locals.deepseek && locals.deepseek.configured ? '已配置' : '未配置' %>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> 保存设置
+            </button>
+            <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetForm()">
+              <i class="fas fa-undo"></i> 重置
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5>关于 API 密钥</h5>
+          </div>
+          <div class="card-body">
+            <p><strong>安全说明:</strong> 所有密钥仅存储在本地配置文件中，不会被发送到任何第三方服务器。</p>
+            
+            <p><strong>配置文件位置:</strong> <code><%= configPath %></code></p>
+            
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i> 如需完全移除已保存的密钥，请删除配置文件并重启应用程序。
+            </div>
+            
+            <h6 class="mt-3">为什么需要这些密钥?</h6>
+            <ul>
+              <li><strong>AdsPower API:</strong> 用于控制AdsPower浏览器环境</li>
+              <li><strong>OpenAI API:</strong> 用于AI辅助功能，如元素识别和指令解析</li>
+              <li><strong>DeepSeek API:</strong> 提供备选AI模型支持</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function togglePasswordVisibility(inputId) {
+      const input = document.getElementById(inputId);
+      const icon = input.nextElementSibling.querySelector('i');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+    
+    function resetForm() {
+      if (confirm('确定要重置表单吗？所有未保存的更改将丢失。')) {
+        window.location.reload();
+      }
+    }
+  </script>
+</body>
+</html> 

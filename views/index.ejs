@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdsPower多环境管理工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/old-style.css">
+    <link rel="stylesheet" href="/css/ai-styles.css?v=<%= Date.now() %>">
+    <!-- 添加调试信息 -->
+    <script>
+        console.log('页面开始加载...');
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM内容已加载完成');
+        });
+        window.addEventListener('load', () => {
+            console.log('页面完全加载完成，包括所有资源');
+        });
+    </script>
+    
+    <!-- 添加强制刷新脚本 -->
+    <script src="/js/force-refresh.js?v=<%= Date.now() %>"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1><%= title %></h1>
+                    <div class="api-status">
+                        <% if (adspower && adspower.connected) { %>
+                            <span class="badge bg-success">AdsPower API 已连接</span>
+                            <% if (adspower.totalEnvironments > 0) { %>
+                                <span class="badge bg-info ms-2">总环境数: <%= adspower.totalEnvironments %></span>
+                            <% } %>
+                        <% } else { %>
+                            <span class="badge bg-danger">AdsPower API 未连接</span>
+                        <% } %>
+                        
+                        <!-- 添加AI API状态 -->
+                        <% if (locals.openaiConfigured) { %>
+                            <span class="badge bg-success ms-2">OpenAI API 已配置</span>
+                        <% } else { %>
+                            <span class="badge bg-warning ms-2">OpenAI API 未配置</span>
+                        <% } %>
+                        
+                        <% if (locals.deepseekConfigured) { %>
+                            <span class="badge bg-success ms-2">DeepSeek API 已配置</span>
+                        <% } else { %>
+                            <span class="badge bg-warning ms-2">DeepSeek API 未配置</span>
+                        <% } %>
+                        
+                        <a href="/settings" class="btn btn-sm btn-primary ms-3">
+                            <i class="fas fa-cog"></i> 配置API密钥
+                        </a>
+                        <a href="/diagnostics" class="btn btn-sm btn-outline-secondary ms-2">API诊断</a>
+                    </div>
+                </div>
+                
+                <!-- 添加API配置提醒 -->
+                <% if (!(locals.openaiConfigured || locals.deepseekConfigured)) { %>
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-exclamation-triangle"></i> 请注意:</strong> 
+                    AI功能未配置。请<a href="/settings" class="alert-link">配置API密钥</a>以启用AI辅助功能。
+                </div>
+                <% } %>
+                
+                <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger mt-3">
+                    <strong>错误:</strong> <%= error %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        
+        <!-- 添加顶部导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">AdsPower管理器</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/">首页</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/element-explorer">元素检查器</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/old-ui">旧版界面</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/diagnostics">诊断信息</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <i class="fas fa-cog"></i> API设置
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="nav-menu">
+            <a href="#" class="nav-item active">环境管理</a>
+            <a href="#" class="nav-item">录制列表</a>
+            <a href="#" class="nav-item">错误分析</a>
+            <a href="#" class="nav-item">系统设置</a>
+        </div>
+        
+        <div class="main-content">
+            <!-- 左侧环境列表 -->
+            <div class="environments-panel">
+                <div class="group-selection">
+                    <select id="group-selector">
+                        <option value="">所有分组</option>
+                        <% if (groups && groups.length > 0) { %>
+                            <% groups.forEach(group => { %>
+                                <option value="<%= group.id %>" <%= selectedGroup === group.id ? 'selected' : '' %>><%= group.name %></option>
+                            <% }); %>
+                        <% } %>
+                    </select>
+                    <button id="refresh-environments" class="btn-refresh"><i class="fas fa-sync"></i></button>
+                </div>
+                <!-- 环境列表容器 -->
+                <div id="env-list" class="env-list">
+                    <div class="loading-indicator">
+                        <p>正在加载环境列表...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧内容 -->
+            <div class="content-panel">
+                <!-- AI命令面板 -->
+                <div class="command-panel">
+                    <h2>AI指令控制</h2>
+                    
+                    <div class="ai-command">
+                        <div class="command-help">
+                            <p>请输入您的指令，例如："打开baidu.com"、"在搜索框中输入'AdsPower'"等。</p>
+                            <p>AI助手将自动分析并执行您的指令。您可以点击左侧环境列表中的环境来选择执行目标。</p>
+                        </div>
+                        
+                        <div id="ai-status" class="alert alert-info d-flex align-items-center mb-3">
+                            <span class="status-indicator loading"></span>
+                            <span class="status-text ms-2">初始化中...</span>
+                        </div>
+                        
+                        <div class="input-group mb-3">
+                            <label for="ai-model-selector" class="me-2">AI模型:</label>
+                            <select id="ai-model-selector" class="form-select" style="max-width: 150px;">
+                                <option value="openai">OpenAI GPT-4</option>
+                                <option value="deepseek">DeepSeek</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group mb-3">
+                            <label for="ai-env-selector" class="me-2">执行环境:</label>
+                            <select id="ai-env-selector" class="form-select">
+                                <option value="">无环境 (仅生成代码)</option>
+                                <!-- 环境列表将由JS动态填充 -->
+                            </select>
+                            <div class="form-text">您也可以直接点击左侧环境列表选择环境</div>
+                        </div>
+                        
+                        <div class="input-group mb-3">
+                            <textarea id="ai-command-input" class="form-control" placeholder="输入AI指令..." rows="5"></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button id="command-btn" class="btn btn-primary">执行</button>
+                            <button id="ai-retry-button" class="btn btn-outline-secondary ms-2" title="重试连接">
+                                <i class="fas fa-sync"></i> 重试连接
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="logs-container" class="logs-container mt-3">
+                        <!-- 命令执行日志将显示在这里 -->
+                        <div class="initial-message">
+                            <p class="text-muted small">命令执行结果将显示在这里...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 执行日志 -->
+                <div class="execution-log">
+                    <h2>执行日志</h2>
+                    <div class="log-container">
+                        <div id="execution-log-content"></div>
+                    </div>
+                </div>
+                
+                <!-- 错误分析 -->
+                <div class="error-analysis">
+                    <h2>错误分析</h2>
+                    <div id="error-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加调试信息的容器 -->
+    <div id="debug-info" style="display:none;"></div>
+    
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/main.js?v=<%= Date.now() %>"></script>
+    <script src="/js/ai-client.js?v=<%= Date.now() %>"></script>
+    
+    <!-- 直接添加内联脚本进行额外测试 -->
+    <script>
+        console.log('内联脚本执行');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('内联脚本DOM加载完成');
+            
+            // 检查主要容器元素
+            const envListEl = document.getElementById('env-list');
+            if (envListEl) {
+                console.log('找到环境列表容器:', envListEl);
+            } else {
+                console.error('没有找到环境列表容器!');
+            }
+            
+            // 添加手动刷新按钮事件
+            const refreshBtn = document.getElementById('refresh-environments');
+            if (refreshBtn) {
+                console.log('找到刷新按钮');
+                refreshBtn.addEventListener('click', function() {
+                    console.log('手动触发刷新');
+                    // 如果app对象在main.js中已加载
+                    if (window.fetchEnvironmentList) {
+                        console.log('调用fetchEnvironmentList()');
+                        window.fetchEnvironmentList();
+                    } else {
+                        console.error('fetchEnvironmentList函数不可用');
+                        
+                        // 尝试手动获取环境列表
+                        fetch('/api/environments')
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log('手动API调用成功，获取到环境:', data);
+                                // 显示环境数量到调试面板
+                                const debugInfo = document.getElementById('debug-info');
+                                if (debugInfo) {
+                                    debugInfo.style.display = 'block';
+                                    debugInfo.innerHTML = `<div style="padding:10px;background:#f0f0f0;">获取到 ${data.length} 个环境</div>`;
+                                }
+                            })
+                            .catch(err => {
+                                console.error('手动API调用失败:', err);
+                            });
+                    }
+                });
+            } else {
+                console.error('没有找到刷新按钮!');
+            }
+        });
+    </script>
+
+    <script>
+        // 动态添加强制刷新按钮
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.querySelector('header');
+            if (header) {
+                const refreshButton = document.createElement('button');
+                refreshButton.textContent = '强制刷新页面';
+                refreshButton.className = 'refresh-btn';
+                refreshButton.style.position = 'absolute';
+                refreshButton.style.top = '10px';
+                refreshButton.style.right = '10px';
+                refreshButton.style.zIndex = '9999';
+                refreshButton.style.padding = '8px 12px';
+                refreshButton.style.background = '#007bff';
+                refreshButton.style.color = 'white';
+                refreshButton.style.border = 'none';
+                refreshButton.style.borderRadius = '4px';
+                refreshButton.style.cursor = 'pointer';
+                
+                refreshButton.onclick = function() {
+                    // 清除所有缓存并刷新
+                    const timestamp = new Date().getTime();
+                    window.location.href = window.location.pathname + 
+                        (window.location.search ? 
+                            window.location.search + '&force_refresh=' + timestamp : 
+                            '?force_refresh=' + timestamp);
+                };
+                
+                header.appendChild(refreshButton);
+            } else {
+                // 如果找不到header，添加到body
+                const refreshButton = document.createElement('div');
+                refreshButton.innerHTML = `
+                    <button id="force-refresh" style="
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        z-index: 9999;
+                        padding: 8px 12px;
+                        background: #007bff;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">强制刷新页面</button>
+                `;
+                document.body.appendChild(refreshButton);
+                
+                document.getElementById('force-refresh').addEventListener('click', function() {
+                    // 清除所有缓存并刷新
+                    const timestamp = new Date().getTime();
+                    window.location.href = window.location.pathname + 
+                        (window.location.search ? 
+                            window.location.search + '&force_refresh=' + timestamp : 
+                            '?force_refresh=' + timestamp);
+                });
+            }
+        });
+    </script>
+
+    <!-- 强制刷新按钮 -->
+    <script>
+      // 动态添加强制刷新按钮
+      document.addEventListener('DOMContentLoaded', function() {
+        const refreshButton = document.createElement('button');
+        refreshButton.style.position = 'fixed';
+        refreshButton.style.bottom = '20px';
+        refreshButton.style.right = '20px';
+        refreshButton.style.zIndex = '9999';
+        refreshButton.style.padding = '10px 15px';
+        refreshButton.style.backgroundColor = '#4CAF50';
+        refreshButton.style.color = 'white';
+        refreshButton.style.border = 'none';
+        refreshButton.style.borderRadius = '5px';
+        refreshButton.style.cursor = 'pointer';
+        refreshButton.textContent = '强制刷新页面';
+        
+        refreshButton.addEventListener('click', function() {
+          // 添加时间戳参数强制刷新
+          const timestamp = new Date().getTime();
+          window.location.href = window.location.pathname + 
+            (window.location.search ? window.location.search + '&' : '?') + 
+            'refresh=' + timestamp;
+        });
+        
+        document.body.appendChild(refreshButton);
+      });
+    </script>
+
+    <!-- 直接添加强制刷新按钮 -->
+    <button id="forceRefreshBtn" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 10px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+      强制刷新页面
+    </button>
+    
+    <script>
+      // 添加直接的强制刷新按钮事件
+      document.getElementById('forceRefreshBtn').addEventListener('click', function() {
+        console.log('强制刷新按钮被点击');
+        // 清除缓存
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) {
+              caches.delete(name);
+            }
+          });
+        }
+        
+        // 添加时间戳参数强制刷新
+        const timestamp = new Date().getTime();
+        window.location.href = window.location.pathname + 
+          (window.location.search ? window.location.search + '&' : '?') + 
+          'nocache=' + timestamp;
+      });
+    </script>
+
+    <div class="mb-3">
+      <a href="/element-explorer" class="btn btn-outline-primary">
+        <i class="fas fa-code"></i> 元素检查器
+      </a>
+      <a href="/diagnostics" class="btn btn-outline-info">
+        <i class="fas fa-stethoscope"></i> 诊断信息
+      </a>
+      <a href="/settings" class="btn btn-outline-secondary">
+        <i class="fas fa-cog"></i> API设置
+      </a>
+      <a href="/old-ui" class="btn btn-outline-secondary">
+        <i class="fas fa-history"></i> 旧版界面
+      </a>
+    </div>
+</body>
+</html>

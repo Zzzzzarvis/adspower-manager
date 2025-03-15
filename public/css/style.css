@@ -1,0 +1,257 @@
+/* 消息样式 */
+.message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  z-index: 9999;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  transition: all 0.3s ease;
+  opacity: 0.95;
+  word-break: break-word;
+}
+
+.message.success {
+  background-color: #f0f9eb;
+  color: #67c23a;
+  border-left: 4px solid #67c23a;
+}
+
+.message.error {
+  background-color: #fef0f0;
+  color: #f56c6c;
+  border-left: 4px solid #f56c6c;
+}
+
+.message.warning {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+  border-left: 4px solid #e6a23c;
+}
+
+.message.info {
+  background-color: #f4f4f5;
+  color: #909399;
+  border-left: 4px solid #909399;
+}
+
+.error-hint {
+  color: #909399;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
+
+.retry-button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.retry-button:hover {
+  background-color: #66b1ff;
+}
+
+/* 加载指示器 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 10px;
+  color: #333;
+  font-size: 14px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 无环境消息 */
+.no-environments-message {
+  text-align: center;
+  padding: 30px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+  border: 1px dashed #ddd;
+}
+
+.no-environments-message h3 {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.no-environments-message p {
+  color: #888;
+  margin-bottom: 15px;
+}
+
+/* 环境列表样式 - 卡片风格 */
+.env-list {
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.env-item {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  background-color: #fff;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: calc(33.33% - 15px);
+  min-width: 280px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.env-item:hover {
+  border-color: #aaa;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.env-item.selected {
+  border-color: #3498db;
+  background-color: #f0f7ff;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.env-number {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 12px;
+  color: #999;
+}
+
+.env-meta {
+  margin-bottom: 10px;
+}
+
+.env-name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.env-group {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 3px;
+}
+
+.env-domain {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 3px;
+}
+
+.env-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.env-status-container {
+  margin-bottom: 10px;
+}
+
+.env-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #fff;
+}
+
+.env-status.status-running {
+  background-color: #2ecc71;
+}
+
+.env-status.status-stopped {
+  background-color: #95a5a6;
+}
+
+.env-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: auto;
+}
+
+.btn-action {
+  flex: 1;
+  background: #f4f6f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-action:hover {
+  background: #e4e6e9;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-start {
+  color: #27ae60;
+}
+
+.btn-stop {
+  color: #e74c3c;
+}
+
+.btn-explore {
+  color: #3498db;
+}
+
+/* 空列表状态 */
+.empty-list {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7f8c8d;
+  background: #f8f9fa;
+  border-radius: 5px;
+  margin: 10px 0;
+  width: 100%;
+} 
